@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { levels } from '../data/levels.js'
-import { buildQuiz } from '../data/quiz.js'
+import { buildQuiz, buildListeningQuiz } from '../data/quiz.js'
+import { speak } from '../speak.js'
 
 // Mode Ujian JLPT: simulasi ujian sungguhan dengan timer, beberapa seksi,
 // dan laporan skor akhir. Format disederhanakan tapi menyerupai JLPT asli.
@@ -9,6 +10,7 @@ const SECTIONS = [
   { id: 'vocab', label: 'Kosakata', duration: 20 },  // menit
   { id: 'grammar', label: 'Tata Bahasa', duration: 20 },
   { id: 'kanji', label: 'Kanji', duration: 15 },
+  { id: 'listening', label: 'Mendengarkan', duration: 15 },
 ]
 
 const QUESTIONS_PER_SECTION = 10
@@ -29,10 +31,15 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
 
   // Bangun soal per seksi
   const sectionQuizzes = useMemo(() => {
-    return SECTIONS.map((s) => ({
-      ...s,
-      questions: buildQuiz(levelId, levelData, QUESTIONS_PER_SECTION).filter((q) => q.type === s.id),
-    }))
+    const all = buildQuiz(levelId, levelData, QUESTIONS_PER_SECTION)
+    const listening = buildListeningQuiz(levelId, levelData.vocab, QUESTIONS_PER_SECTION)
+    return SECTIONS
+      .map((s) => ({
+        ...s,
+        questions: s.id === 'listening' ? listening : all.filter((q) => q.type === s.id),
+      }))
+      // buang seksi tanpa soal (mis. contoh kalimat belum cukup untuk mendengarkan)
+      .filter((s) => s.questions.length > 0)
   }, [levelId, levelData])
 
   // Timer
@@ -54,6 +61,12 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
 
   const currentSection = sectionQuizzes[section]
   const question = currentSection?.questions[qIdx]
+  const isListening = currentSection?.id === 'listening'
+
+  // Soal mendengarkan diputar otomatis saat muncul
+  useEffect(() => {
+    if (phase === 'running' && isListening && question?.audio) speak(question.audio)
+  }, [phase, isListening, question])
 
   const pick = (opt) => {
     if (picked) return
@@ -96,14 +109,14 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
         <span className="level-tag" style={{ background: level.color }}>{level.name}</span>
         <h2 style={{ margin: '10px 0 6px' }}>Ujian JLPT {level.name}</h2>
         <p className="sub" style={{ maxWidth: 420, margin: '0 auto 18px' }}>
-          Simulasi ujian dengan {SECTIONS.length} seksi dan batas waktu. Total{' '}
-          {SECTIONS.length * QUESTIONS_PER_SECTION} soal.
+          Simulasi ujian dengan {sectionQuizzes.length} seksi dan batas waktu. Total{' '}
+          {sectionQuizzes.reduce((n, s) => n + s.questions.length, 0)} soal.
         </p>
         <div className="exam-sections">
-          {SECTIONS.map((s) => (
+          {sectionQuizzes.map((s) => (
             <div className="exam-section-row" key={s.id}>
               <span>{s.label}</span>
-              <span className="sub">{QUESTIONS_PER_SECTION} soal · {s.duration} menit</span>
+              <span className="sub">{s.questions.length} soal · {s.duration} menit</span>
             </div>
           ))}
         </div>
@@ -134,7 +147,7 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
           {pct >= 80 ? 'Lulus! Kamu menguasai tingkat ini.' : pct >= 50 ? 'Hampir — terus berlatih.' : 'Belum lulus. Jangan menyerah.'}
         </p>
         <div className="exam-sections">
-          {SECTIONS.map((s) => {
+          {sectionQuizzes.map((s) => {
             const r = bySection[s.id] || { correct: 0, total: 0 }
             return (
               <div className="exam-section-row" key={s.id}>
@@ -165,8 +178,22 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
         />
       </div>
 
-      <div className="quiz-question jp">{question.question}</div>
-      {question.hint && <div className="quiz-hint">{question.hint}</div>}
+      {isListening ? (
+        <div className="listen-card">
+          <button className="listen-play" onClick={() => speak(question.audio)} aria-label="Putar ulang">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+          <div className="listen-hint">Putar ulang dan pilih artinya</div>
+          {picked && <div className="listen-placeholder jp">{question.audio}</div>}
+        </div>
+      ) : (
+        <>
+          <div className="quiz-question jp">{question.question}</div>
+          {question.hint && <div className="quiz-hint">{question.hint}</div>}
+        </>
+      )}
       <div>
         {question.options.map((opt, i) => {
           let cls = 'option'

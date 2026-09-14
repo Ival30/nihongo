@@ -101,6 +101,42 @@ export function addCards(data, type, items, metaFn) {
 
 // ---------- Progress tracking ----------
 
+// ---------- Streak harian ----------
+
+const STREAK_KEY = 'nihongo_streak_v1'
+
+function dayKey(ts) {
+  const d = new Date(ts)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function loadStreak() {
+  try {
+    return JSON.parse(localStorage.getItem(STREAK_KEY)) || { current: 0, best: 0, last: null }
+  } catch {
+    return { current: 0, best: 0, last: null }
+  }
+}
+
+export function saveStreak(data) {
+  localStorage.setItem(STREAK_KEY, JSON.stringify(data))
+}
+
+// Catat aktivitas belajar hari ini. Mengembalikan streak yang diperbarui.
+export function recordActivity(streak, now = Date.now()) {
+  const today = dayKey(now)
+  if (streak.last === today) return streak // sudah dihitung hari ini
+
+  const yesterday = dayKey(now - 24 * 60 * 60 * 1000)
+  const current = streak.last === yesterday ? (streak.current || 0) + 1 : 1
+  return { current, best: Math.max(streak.best || 0, current), last: today }
+}
+
+// Apakah hari ini sudah ada aktivitas?
+export function isActiveToday(streak, now = Date.now()) {
+  return streak.last === dayKey(now)
+}
+
 export function loadProgress() {
   try {
     return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}

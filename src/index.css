@@ -116,6 +116,21 @@ button { font-family: var(--sans); }
   flex-shrink: 0;
 }
 
+.streak-chip {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent-deep);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--accent);
+}
+
 .review-chip {
   display: grid;
   place-items: center;
@@ -498,83 +513,6 @@ rt {
   border-bottom: 1px solid var(--border);
 }
 .exam-section-row:last-child { border-bottom: none; }
-
-/* ---------- Journal ---------- */
-.journal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-}
-
-.journal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.journal-owner { display: flex; align-items: center; gap: 12px; }
-
-.journal-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 1.3rem;
-  display: grid;
-  place-items: center;
-}
-
-.journal-name { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
-.journal-sub { color: var(--muted); font-size: 0.8rem; }
-
-.journal-compose { margin-bottom: 16px; }
-
-.journal-input {
-  width: 100%;
-  padding: 12px 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 0.92rem;
-  font-family: var(--sans);
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.14s ease;
-}
-.journal-input:focus { border-color: var(--accent); }
-.journal-input::placeholder { color: var(--faint); }
-
-.journal-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
-.journal-list { display: flex; flex-direction: column; gap: 10px; }
-
-.journal-entry {
-  padding: 12px 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-
-.journal-meta {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  margin-bottom: 6px;
-}
-.journal-date { font-weight: 600; font-size: 0.85rem; color: var(--accent-deep); }
-.journal-time { color: var(--faint); font-size: 0.78rem; }
-
-.journal-text { color: var(--ink); font-size: 0.92rem; white-space: pre-wrap; }
 
 /* ---------- Dokkai (bacaan) ---------- */
 .dokkai { max-width: 680px; margin: 0 auto; }

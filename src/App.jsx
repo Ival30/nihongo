@@ -8,6 +8,7 @@ import {
   loadSRS, saveSRS, loadProgress, saveProgress,
   getDueCards, reviewCard, addCards, getSRSStats,
   recordItemProgress, recordQuizProgress,
+  loadStreak, saveStreak, recordActivity, isActiveToday,
 } from './srs.js'
 import Flashcard from './components/Flashcard.jsx'
 import SRSReview from './components/SRSReview.jsx'
@@ -18,7 +19,6 @@ import Ruby from './components/Ruby.jsx'
 import ConjugationView from './components/ConjugationView.jsx'
 import ListeningView from './components/ListeningView.jsx'
 import ExamView from './components/ExamView.jsx'
-import Journal from './components/Journal.jsx'
 import DokkaiView from './components/DokkaiView.jsx'
 import GlobalSearchView from './components/GlobalSearchView.jsx'
 import StrokeOrder from './components/StrokeOrder.jsx'
@@ -36,7 +36,6 @@ const NAV = [
   { id: 'progress', label: 'Kemajuan' },
 ]
 
-const OWNER_NAME = 'YOGA RIVALDI'
 
 const PAGE_SIZE = 50
 
@@ -65,6 +64,12 @@ export default function App() {
   const [progress, setProgress] = useState(loadProgress)
   const [levelData, setLevelData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [streak, setStreak] = useState(loadStreak)
+
+  useEffect(() => saveStreak(streak), [streak])
+
+  // Catat aktivitas belajar → memperbarui streak harian
+  const markActivity = () => setStreak((s) => recordActivity(s))
 
   const level = getLevel(levelId)
   const showLevel = !['home', 'progress', 'kana', 'cari'].includes(view)
@@ -106,6 +111,7 @@ export default function App() {
         levelId={levelId}
         showLevel={showLevel}
         dueCount={getSRSStats(srs).due}
+        streak={streak}
         onBrand={() => handleNav('home')}
         onNav={handleNav}
         onLevel={handleLevel}
@@ -138,7 +144,7 @@ export default function App() {
                 levelId={levelId}
                 items={levelData.vocab}
                 progress={progress}
-                onMark={(key, ok) => setProgress((p) => recordItemProgress(p, 'vocab', key, levelId, ok))}
+                onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'vocab', key, levelId, ok)) }}
                 onAddToSRS={(batch) => setSrs((s) => addCards(s, 'vocab', batch, (it) => ({ content: it.jp, meta: { reading: it.reading, meaning: it.meaning } })))}
               />
             )}
@@ -147,7 +153,7 @@ export default function App() {
                 level={level}
                 items={levelData.grammar}
                 progress={progress}
-                onMark={(key, ok) => setProgress((p) => recordItemProgress(p, 'grammar', key, levelId, ok))}
+                onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'grammar', key, levelId, ok)) }}
                 onAddToSRS={(batch) => setSrs((s) => addCards(s, 'grammar', batch, (it) => ({ content: it.pattern, meta: { meaning: it.meaning, example: it.example } })))}
               />
             )}
@@ -156,7 +162,7 @@ export default function App() {
                 level={level}
                 items={levelData.kanji}
                 progress={progress}
-                onMark={(key, ok) => setProgress((p) => recordItemProgress(p, 'kanji', key, levelId, ok))}
+                onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'kanji', key, levelId, ok)) }}
                 onAddToSRS={(batch) => setSrs((s) => addCards(s, 'kanji', batch, (it) => ({ content: it.char, meta: { meaning: it.meaning, on: it.on, kun: it.kun } })))}
               />
             )}
@@ -166,8 +172,8 @@ export default function App() {
                 levelData={levelData}
                 levelId={levelId}
                 srs={srs}
-                onReview={(id, q) => setSrs((s) => reviewCard(s, id, q))}
-                onFinish={(score, total) => setProgress((p) => recordQuizProgress(p, levelId, score, total))}
+                onReview={(id, q) => { markActivity(); setSrs((s) => reviewCard(s, id, q)) }}
+                onFinish={(score, total) => { markActivity(); setProgress((p) => recordQuizProgress(p, levelId, score, total)) }}
               />
             )}
             {view === 'exam' && (
@@ -175,7 +181,7 @@ export default function App() {
                 level={level}
                 levelData={levelData}
                 levelId={levelId}
-                onFinish={(score, total) => setProgress((p) => recordQuizProgress(p, levelId, score, total))}
+                onFinish={(score, total) => { markActivity(); setProgress((p) => recordQuizProgress(p, levelId, score, total)) }}
               />
             )}
           </>
@@ -191,7 +197,7 @@ function Loading() {
   return <p className="sub" style={{ padding: '40px 0', textAlign: 'center' }}>Memuat materi…</p>
 }
 
-function TopBar({ view, levelId, showLevel, dueCount, onBrand, onNav, onLevel }) {
+function TopBar({ view, levelId, showLevel, dueCount, streak, onBrand, onNav, onLevel }) {
   return (
     <header className="topbar">
       <div className="brand" onClick={onBrand}>
@@ -211,6 +217,11 @@ function TopBar({ view, levelId, showLevel, dueCount, onBrand, onNav, onLevel })
       </nav>
 
       <div className="topbar-right">
+        {streak?.current > 0 && (
+          <span className="streak-chip" title={`Rentetan belajar: ${streak.current} hari (terbaik ${streak.best})`}>
+            {streak.current}
+          </span>
+        )}
         {dueCount > 0 && view !== 'latihan' && (
           <button className="review-chip" onClick={() => onNav('latihan')}>
             {dueCount}
@@ -319,9 +330,6 @@ function Home({ levelId, onLevel, progress, srs, onOpen }) {
           </div>
         ))}
       </div>
-
-      <div className="section-title">Jurnal Saya</div>
-      <Journal ownerName={OWNER_NAME} />
     </div>
   )
 }

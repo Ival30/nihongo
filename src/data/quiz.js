@@ -75,6 +75,29 @@ export function buildKanjiQuiz(levelId, kanjiList, count = 10) {
   })
 }
 
+export function buildListeningQuiz(levelId, vocabList, count = 10) {
+  // Hanya kata yang punya contoh kalimat bisa dipakai untuk latihan mendengar.
+  const pool = vocabList.filter((v) => v.example && (v.exampleId || v.meaningId || v.meaning))
+  if (pool.length < 4) return []
+  const rng = seededRng(levelId.length * 5000 + pool.length)
+  const picked = shuffle(pool, rng).slice(0, count)
+  const answerOf = (v) => v.exampleId || v.meaningId || v.meaning
+  return picked.map((item) => {
+    const options = shuffle(
+      [answerOf(item), ...shuffle(pool.filter((v) => answerOf(v) !== answerOf(item)), rng).slice(0, 3).map(answerOf)],
+      rng,
+    )
+    return {
+      type: 'listening',
+      question: item.example, // diputar sebagai suara, bukan ditampilkan sebelum dijawab
+      audio: item.example,
+      answer: answerOf(item),
+      options,
+      hint: undefined,
+    }
+  })
+}
+
 export function buildQuiz(levelId, data, count = 10) {
   const vocab = buildVocabQuiz(levelId, data.vocab, count)
   const grammar = buildGrammarQuiz(levelId, data.grammar, count)
