@@ -52,7 +52,7 @@ function sm2(card, quality) {
 }
 
 // Dapatkan kartu yang harus direview (due <= sekarang), diurutkan paling lama
-export function getDueCards(data, limit = 20) {
+export function getDueCards(data, limit = 100) {
   const now = Date.now()
   return Object.entries(data)
     .filter(([, c]) => c.due <= now)

@@ -145,7 +145,7 @@ export default function App() {
                 items={levelData.vocab}
                 progress={progress}
                 onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'vocab', key, levelId, ok)) }}
-                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'vocab', batch, (it) => ({ content: it.jp, meta: { reading: it.reading, meaning: it.meaning } })))}
+                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'vocab', batch, (it) => ({ content: it.jp, meta: { reading: it.reading, meaning: it.meaningId || it.meaning, example: it.example, exampleId: it.exampleId } })))}
               />
             )}
             {view === 'grammar' && (
@@ -154,7 +154,7 @@ export default function App() {
                 items={levelData.grammar}
                 progress={progress}
                 onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'grammar', key, levelId, ok)) }}
-                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'grammar', batch, (it) => ({ content: it.pattern, meta: { meaning: it.meaning, example: it.example } })))}
+                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'grammar', batch, (it) => ({ content: it.pattern, meta: { meaning: it.meaningId || it.meaning, example: it.example, exampleId: it.exampleId } })))}
               />
             )}
             {view === 'kanji' && (
@@ -163,7 +163,7 @@ export default function App() {
                 items={levelData.kanji}
                 progress={progress}
                 onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'kanji', key, levelId, ok)) }}
-                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'kanji', batch, (it) => ({ content: it.char, meta: { meaning: it.meaning, on: it.on, kun: it.kun } })))}
+                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'kanji', batch, (it) => ({ content: it.char, meta: { meaning: it.meaningId || it.meaning, on: it.on, kun: it.kun } })))}
               />
             )}
             {view === 'latihan' && (
@@ -579,6 +579,8 @@ function KanjiView({ level, items, progress, onMark, onAddToSRS }) {
 
 function PracticeView({ level, levelData, levelId, srs, onReview, onFinish }) {
   const [sub, setSub] = useState('flashcard')
+  // Hook dipanggil di level atas komponen (bukan di dalam JSX kondisional)
+  const dueCards = useMemo(() => getDueCards(srs, 50), [srs])
   return (
     <div>
       <PageHeader
@@ -598,7 +600,7 @@ function PracticeView({ level, levelData, levelId, srs, onReview, onFinish }) {
         <FlashcardView level={level} vocab={levelData.vocab} grammar={levelData.grammar} kanji={levelData.kanji} />
       )}
       {sub === 'srs' && (
-        <SRSReview cards={useMemo(() => getDueCards(srs), [srs])} onReview={onReview} onDone={() => setSub('flashcard')} />
+        <SRSReview cards={dueCards} onReview={onReview} onDone={() => setSub('flashcard')} />
       )}
       {sub === 'conj' && (
         <ConjugationView levelId={levelId} />

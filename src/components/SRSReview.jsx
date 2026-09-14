@@ -1,13 +1,28 @@
-import { useState } from 'react'
-import Flashcard from './Flashcard.jsx'
+import { useState, useMemo, useEffect, useRef } from 'react'
 
-// Layar review SRS: menampilkan kartu yang jatuh tempo, lalu pengguna menilai
-// kualitas ingatan (lagi / sulit / bagus / mudah) yang menentukan interval berikutnya.
+// Layar pengulangan terjadwal (SRS).
+// Alur: tampilkan kartu → buka jawaban → nilai ingatan (Ulangi/Sulit/Baik/Mudah).
+// Kartu yang dinilai "Ulangi" dikembalikan ke antrian sesi ini, bukan dibuang.
 export default function SRSReview({ cards, onReview, onDone }) {
+  // Salinan antrian sesi: kartu baru ditambahkan saat dinilai "Ulangi"
+  const [queue, setQueue] = useState(() => cards || [])
   const [idx, setIdx] = useState(0)
   const [revealed, setRevealed] = useState(false)
+  const [reviewed, setReviewed] = useState(0)
 
-  if (!cards || cards.length === 0) {
+  // Sinkronkan bila daftar kartu dari luar berubah (mis. dibuka ulang)
+  const cardsRef = useRef(cards)
+  useEffect(() => {
+    if (cardsRef.current !== cards) {
+      cardsRef.current = cards
+      setQueue(cards || [])
+      setIdx(0)
+      setRevealed(false)
+      setReviewed(0)
+    }
+  }, [cards])
+
+  if (!queue || queue.length === 0) {
     return (
       <div className="quiz-wrap quiz-result">
         <h2 style={{ margin: '10px 0' }}>Tidak ada kartu untuk diulang</h2>
@@ -21,16 +36,31 @@ export default function SRSReview({ cards, onReview, onDone }) {
     )
   }
 
-  const card = cards[idx]
+  // Antrian habis → sesi selesai
+  if (idx >= queue.length) {
+    return (
+      <div className="quiz-wrap quiz-result">
+        <h2 style={{ margin: '10px 0' }}>Sesi selesai</h2>
+        <p className="sub">{reviewed} kartu telah dinilai. Kerja bagus.</p>
+        <div className="btn-row">
+          <button className="btn" onClick={onDone}>Selesai</button>
+        </div>
+      </div>
+    )
+  }
+
+  const card = queue[idx]
+  const total = queue.length
 
   const grade = (quality) => {
     onReview(card.id, quality)
-    if (idx + 1 >= cards.length) {
-      onDone()
-    } else {
-      setIdx(idx + 1)
-      setRevealed(false)
+    setReviewed((n) => n + 1)
+    // "Ulangi" (0) → masukkan kembali ke akhir antrian agar benar-benar diulang
+    if (quality === 0) {
+      setQueue((q) => [...q, card])
     }
+    setIdx((i) => i + 1)
+    setRevealed(false)
   }
 
   return (
@@ -38,14 +68,14 @@ export default function SRSReview({ cards, onReview, onDone }) {
       <div className="progress">
         <div
           className="progress-fill"
-          style={{ width: `${(idx / cards.length) * 100}%` }}
+          style={{ width: `${(idx / total) * 100}%` }}
         />
       </div>
       <p className="sub" style={{ textAlign: 'center', marginBottom: 14 }}>
-        Kartu {idx + 1} dari {cards.length} · interval: {card.interval} hari · pengulangan: {card.reps}
+        Kartu {idx + 1} dari {total} · {card.reps > 0 ? `pengulangan ke-${card.reps}` : 'kartu baru'}
       </p>
 
-      <CardFace card={card} revealed={revealed} onReveal={() => setRevealed(true)} />
+      <CardFace card={card} revealed={revealed} />
 
       {revealed ? (
         <div className="grade-row">
@@ -63,71 +93,40 @@ export default function SRSReview({ cards, onReview, onDone }) {
   )
 }
 
-function CardFace({ card, revealed, onReveal }) {
-  // Kartu SRS menyimpan { id, type, content, ... } — rekonstruksi tampilan dari tipe
-  const [type, key] = card.id.split(':')
-  const content = card.id.slice(card.id.indexOf(':') + 1)
-
-  // Kita butuh data asli. Kartu dibangun dengan metadata yang disimpan di kartu.
+// Bangun tampilan kartu dari metadata yang tersimpan.
+function CardFace({ card, revealed }) {
   const meta = card.meta || {}
+  const content = card.id.slice(card.id.indexOf(':') + 1)
+  const type = card.id.split(':')[0]
 
-  if (type === 'vocab') {
-    return (
-      <div className="flashcard-scene">
-        <div className="flashcard">
-          <div className="flash-face flash-front" style={{ transform: 'none', position: 'static' }}>
-            <div className="flash-label">Kosakata</div>
-            <div className="flash-main jp">{content}</div>
-            {meta.reading && <div className="flash-sub jp">{meta.reading}</div>}
+  const label = type === 'vocab' ? 'Kosakata' : type === 'grammar' ? 'Tata Bahasa' : 'Kanji'
+
+  return (
+    <div className="flashcard-scene">
+      <div className="flashcard">
+        <div className="flash-face flash-front" style={{ transform: 'none', position: 'static' }}>
+          <div className="flash-label">{label}</div>
+          <div
+            className="flash-main jp"
+            style={type === 'kanji' ? { fontSize: '4rem' } : undefined}
+          >
+            {content}
           </div>
+          {type === 'vocab' && meta.reading && (
+            <div className="flash-sub jp">{meta.reading}</div>
+          )}
         </div>
-        {revealed && (
-          <div className="reveal-panel">
-            <div className="flash-main">{meta.meaning}</div>
-            {meta.example && <div className="example jp">{meta.example}</div>}
-          </div>
-        )}
       </div>
-    )
-  }
 
-  if (type === 'grammar') {
-    return (
-      <div className="flashcard-scene">
-        <div className="flashcard">
-          <div className="flash-face flash-front" style={{ transform: 'none', position: 'static' }}>
-            <div className="flash-label">Tata Bahasa</div>
-            <div className="flash-main jp">{content}</div>
-          </div>
-        </div>
-        {revealed && (
-          <div className="reveal-panel">
-            <div className="flash-main">{meta.meaning}</div>
-            {meta.example && <div className="example jp">{meta.example}</div>}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  if (type === 'kanji') {
-    return (
-      <div className="flashcard-scene">
-        <div className="flashcard">
-          <div className="flash-face flash-front" style={{ transform: 'none', position: 'static' }}>
-            <div className="flash-label">Kanji</div>
-            <div className="flash-main jp" style={{ fontSize: '4rem' }}>{content}</div>
-          </div>
-        </div>
-        {revealed && (
-          <div className="reveal-panel">
-            <div className="flash-main">{meta.meaning}</div>
+      {revealed && (
+        <div className="reveal-panel">
+          <div className="flash-main">{meta.meaning || meta.meaningId}</div>
+          {meta.on && (
             <div className="flash-sub">On: {meta.on} · Kun: {meta.kun}</div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  return null
+          )}
+          {meta.example && <div className="example jp">{meta.example}</div>}
+        </div>
+      )}
+    </div>
+  )
 }
