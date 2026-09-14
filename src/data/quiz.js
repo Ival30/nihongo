@@ -1,5 +1,6 @@
 // Generator kuis: membangun soal pilihan ganda dari data kosakata/tata bahasa/kanji.
 // Soal dibangun deterministik dari data agar jumlah soal selalu konsisten.
+// Semua teks jawaban memakai arti bahasa Indonesia (meaningId) bila tersedia.
 
 function shuffle(arr, rng = Math.random) {
   const a = [...arr]
@@ -21,18 +22,26 @@ function seededRng(seed) {
   }
 }
 
+// Arti yang ditampilkan/dinilai: utamakan bahasa Indonesia.
+const gloss = (item) => item.meaningId || item.meaning
+
+// Ambil 3 pengecoh dari daftar, dengan teks berbeda dari jawaban benar.
+function distractors(list, correct, rng, n = 3) {
+  return shuffle(list.filter((it) => gloss(it) !== correct), rng)
+    .slice(0, n)
+    .map(gloss)
+}
+
 export function buildVocabQuiz(levelId, vocabList, count = 10) {
   const rng = seededRng(levelId.length * 1000 + vocabList.length)
   const picked = shuffle(vocabList, rng).slice(0, count)
   return picked.map((item) => {
-    const options = shuffle(
-      [item.meaning, ...shuffle(vocabList.filter((v) => v.meaning !== item.meaning), rng).slice(0, 3).map((v) => v.meaning)],
-      rng,
-    )
+    const answer = gloss(item)
+    const options = shuffle([answer, ...distractors(vocabList, answer, rng)], rng)
     return {
       type: 'vocab',
       question: `Apa arti dari「${item.jp}」?`,
-      answer: item.meaning,
+      answer,
       options,
       hint: item.reading ? `Cara baca: ${item.reading}` : undefined,
     }
@@ -43,14 +52,12 @@ export function buildGrammarQuiz(levelId, grammarList, count = 10) {
   const rng = seededRng(levelId.length * 2000 + grammarList.length)
   const picked = shuffle(grammarList, rng).slice(0, count)
   return picked.map((item) => {
-    const options = shuffle(
-      [item.meaning, ...shuffle(grammarList.filter((g) => g.meaning !== item.meaning), rng).slice(0, 3).map((g) => g.meaning)],
-      rng,
-    )
+    const answer = gloss(item)
+    const options = shuffle([answer, ...distractors(grammarList, answer, rng)], rng)
     return {
       type: 'grammar',
       question: `Apa arti pola「${item.pattern}」?`,
-      answer: item.meaning,
+      answer,
       options,
       hint: item.example,
     }
@@ -61,14 +68,12 @@ export function buildKanjiQuiz(levelId, kanjiList, count = 10) {
   const rng = seededRng(levelId.length * 3000 + kanjiList.length)
   const picked = shuffle(kanjiList, rng).slice(0, count)
   return picked.map((item) => {
-    const options = shuffle(
-      [item.meaning, ...shuffle(kanjiList.filter((k) => k.meaning !== item.meaning), rng).slice(0, 3).map((k) => k.meaning)],
-      rng,
-    )
+    const answer = gloss(item)
+    const options = shuffle([answer, ...distractors(kanjiList, answer, rng)], rng)
     return {
       type: 'kanji',
       question: `Apa arti kanji「${item.char}」?`,
-      answer: item.meaning,
+      answer,
       options,
       hint: item.on ? `On-yomi: ${item.on}` : undefined,
     }
@@ -77,21 +82,18 @@ export function buildKanjiQuiz(levelId, kanjiList, count = 10) {
 
 export function buildListeningQuiz(levelId, vocabList, count = 10) {
   // Hanya kata yang punya contoh kalimat bisa dipakai untuk latihan mendengar.
-  const pool = vocabList.filter((v) => v.example && (v.exampleId || v.meaningId || v.meaning))
+  const pool = vocabList.filter((v) => v.example && gloss(v))
   if (pool.length < 4) return []
   const rng = seededRng(levelId.length * 5000 + pool.length)
   const picked = shuffle(pool, rng).slice(0, count)
-  const answerOf = (v) => v.exampleId || v.meaningId || v.meaning
   return picked.map((item) => {
-    const options = shuffle(
-      [answerOf(item), ...shuffle(pool.filter((v) => answerOf(v) !== answerOf(item)), rng).slice(0, 3).map(answerOf)],
-      rng,
-    )
+    const answer = gloss(item)
+    const options = shuffle([answer, ...distractors(pool, answer, rng)], rng)
     return {
       type: 'listening',
       question: item.example, // diputar sebagai suara, bukan ditampilkan sebelum dijawab
       audio: item.example,
-      answer: answerOf(item),
+      answer,
       options,
       hint: undefined,
     }

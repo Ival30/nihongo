@@ -129,7 +129,6 @@ export default function App() {
 
         {view === 'dokkai' && (
           <DokkaiView
-            level={level}
             levelId={levelId}
             onFinish={(score, total) => setProgress((p) => recordQuizProgress(p, `dokkai-${levelId}`, score, total))}
           />
@@ -643,9 +642,9 @@ function FlashcardView({ level, vocab, grammar, kanji }) {
         <div className={`tab ${mode === 'kanji' ? 'active' : ''}`} onClick={() => switchMode('kanji')}>Kanji</div>
       </div>
 
-      {mode === 'vocab' && item && <Flashcard front={item.jp} frontSub={item.reading} back={item.meaningId || item.meaning} />}
-      {mode === 'grammar' && item && <Flashcard front={item.pattern} frontSub={item.formation} back={item.meaning} backSub={item.example} />}
-      {mode === 'kanji' && item && <Flashcard front={item.char} frontSub={item.strokes > 0 ? `${item.strokes} coretan` : ''} back={item.meaning} backSub={`On: ${item.on} · Kun: ${item.kun}`} />}
+      {mode === 'vocab' && item && <Flashcard resetKey={idx} front={item.jp} frontSub={item.reading} back={item.meaningId || item.meaning} />}
+      {mode === 'grammar' && item && <Flashcard resetKey={idx} front={item.pattern} frontSub={item.formationId || item.formation} back={item.meaningId || item.meaning} backSub={item.exampleId || item.example} />}
+      {mode === 'kanji' && item && <Flashcard resetKey={idx} front={item.char} frontSub={item.strokes > 0 ? `${item.strokes} coretan` : ''} back={(item.meaningId || item.meaning).split(',')[0]} backSub={`On: ${item.on} · Kun: ${item.kun}`} />}
 
       <div className="btn-row">
         <button className="btn ghost" onClick={() => nav(-1)}>←</button>

@@ -6,7 +6,7 @@ import FuriganaText from './FuriganaText.jsx'
 
 // Bacaan pendek (dokkai) + soal pemahaman.
 // Dua mode: baca teks (dengan furigana & terjemahan opsional), lalu jawab soal.
-export default function DokkaiView({ level, levelId, onFinish }) {
+export default function DokkaiView({ levelId, onFinish }) {
   const readings = useMemo(() => getReadings(levelId), [levelId])
   const [idx, setIdx] = useState(0)
   const [showId, setShowId] = useState(false)

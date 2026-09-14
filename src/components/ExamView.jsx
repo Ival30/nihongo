@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
-import { levels } from '../data/levels.js'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { buildQuiz, buildListeningQuiz } from '../data/quiz.js'
 import { speak } from '../speak.js'
 
@@ -42,6 +41,14 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
       .filter((s) => s.questions.length > 0)
   }, [levelId, levelData])
 
+  // Laporkan skor sekali saat ujian selesai (setelah state answers final)
+  const reported = useRef(false)
+  useEffect(() => {
+    if (phase !== 'done' || reported.current) return
+    reported.current = true
+    if (onFinish) onFinish(answers.filter((a) => a.correct).length, answers.length)
+  }, [phase, answers, onFinish])
+
   // Timer
   useEffect(() => {
     if (phase !== 'running') return
@@ -51,6 +58,7 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
   }, [phase, timeLeft])
 
   const startExam = () => {
+    reported.current = false
     setPhase('running')
     setSection(0)
     setQIdx(0)
@@ -86,13 +94,7 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
 
   const nextSection = (timedOut) => {
     if (section + 1 >= sectionQuizzes.length) {
-      // selesai semua seksi
       setPhase('done')
-      if (onFinish) {
-        const total = answers.length
-        const score = answers.filter((a) => a.correct).length
-        onFinish(score, total)
-      }
     } else {
       const next = section + 1
       setSection(next)

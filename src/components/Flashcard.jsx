@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // Kartu flashcard dengan animasi flip 3D.
-export default function Flashcard({ front, frontSub, back, backSub, onFlip }) {
+// Kartu otomatis tertutup kembali saat isinya berganti.
+export default function Flashcard({ front, frontSub, back, backSub, onFlip, resetKey }) {
   const [flipped, setFlipped] = useState(false)
+
+  // Tutup kartu setiap kali kartu berganti (isi depan berubah)
+  useEffect(() => {
+    setFlipped(false)
+  }, [resetKey, front])
 
   const flip = () => {
     setFlipped((f) => {
