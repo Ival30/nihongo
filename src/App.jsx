@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { levels } from './data/levels.js'
 import { counts } from './data/counts.js'
 import { vocabOrder } from './data/vocab-order.js'
@@ -630,9 +630,11 @@ function FlashcardView({ level, vocab, grammar, kanji }) {
     return a
   }, [mode, vocab, grammar, kanji, shuffled])
 
-  const item = pool[idx % pool.length]
+  const item = pool.length ? pool[idx % pool.length] : null
   const nav = (dir) => setIdx((i) => (i + dir + pool.length) % pool.length)
   const switchMode = (m) => { setMode(m); setIdx(0); setShuffled(false) }
+
+  if (!item) return <p className="sub">Belum ada materi untuk kartu hafalan di tingkat ini.</p>
 
   return (
     <div>
@@ -662,14 +664,28 @@ function QuizView({ level, data, levelId, onFinish }) {
   const [picked, setPicked] = useState(null)
   const [score, setScore] = useState(0)
   const [done, setDone] = useState(false)
-  const [reported, setReported] = useState(false)
 
-  const restart = () => { setIdx(0); setPicked(null); setScore(0); setDone(false); setReported(false) }
+  const reported = useRef(false)
+
+  const restart = () => {
+    reported.current = false
+    setIdx(0); setPicked(null); setScore(0); setDone(false)
+  }
+
+  // Ganti tingkat → mulai kuis dari awal
+  useEffect(() => { restart() }, [levelId])
+
+  // Laporkan skor sekali saat kuis selesai (bukan saat render)
+  useEffect(() => {
+    if (done && !reported.current) {
+      reported.current = true
+      onFinish(score, quiz.length)
+    }
+  }, [done, score, quiz.length, onFinish])
 
   if (quiz.length === 0) return <p className="sub">Tidak ada soal.</p>
 
   if (done) {
-    if (!reported) { onFinish(score, quiz.length); setReported(true) }
     const pct = Math.round((score / quiz.length) * 100)
     return (
       <div className="quiz-wrap quiz-result">

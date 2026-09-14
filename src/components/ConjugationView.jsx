@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { conjugate, FORMS, getConjugationWords } from '../data/conjugation.js'
 import SpeakButton from './SpeakButton.jsx'
 
@@ -12,19 +12,31 @@ export default function ConjugationView({ levelId }) {
   const [correct, setCorrect] = useState(0)
   const [tried, setTried] = useState(0)
 
+  // Ganti tingkat → mulai dari awal
+  useEffect(() => {
+    setIdx(0); setInput(''); setRevealed(false); setCorrect(0); setTried(0)
+  }, [levelId])
+
   const word = words[idx % words.length]
   const conj = conjugate(word)
   const answer = conj[formKey]
   const formMeta = FORMS.find((f) => f.key === formKey)
 
+  // Normalisasi jawaban: buang spasi dan samakan katakana → hiragana,
+  // agar "タベテ" dan "た べて" tetap dianggap sama dengan "たべて".
+  const norm = (s) =>
+    (s || '')
+      .replace(/\s+/g, '')
+      .replace(/[\u30a1-\u30f6]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0x60))
+
+  // Apakah jawaban pengguna benar (satu sumber kebenaran)
+  const isCorrect = norm(input) === norm(answer)
+
   const check = () => {
     if (revealed) return
     setRevealed(true)
     setTried((t) => t + 1)
-    const clean = input.trim().replace(/\s+/g, '')
-    if (clean === answer || clean === (word.reading && conj[formKey])) {
-      setCorrect((c) => c + 1)
-    }
+    if (isCorrect) setCorrect((c) => c + 1)
   }
 
   const next = () => {
@@ -57,10 +69,8 @@ export default function ConjugationView({ levelId }) {
       />
 
       {revealed && (
-        <div className={`feedback ${input.trim() === answer ? 'good' : 'bad'}`}>
-          {input.trim() === answer
-            ? 'Benar!'
-            : `Kurang tepat — jawabannya: ${answer}`}
+        <div className={`feedback ${isCorrect ? 'good' : 'bad'}`}>
+          {isCorrect ? 'Benar.' : `Kurang tepat — jawabannya: ${answer}`}
         </div>
       )}
 

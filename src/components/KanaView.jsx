@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { kana, flattenKana, KANA_GROUPS } from '../data/kana.js'
 import { speak, isSpeechSupported } from '../speak.js'
 
@@ -81,7 +81,13 @@ function KanaPractice({ script }) {
   const [score, setScore] = useState(0)
   const [tried, setTried] = useState(0)
 
-  const item = pool[idx % pool.length]
+  // Ganti jenis huruf (hiragana/katakana) → latihan mulai dari awal
+  useEffect(() => {
+    setIdx(0); setRevealed(false); setScore(0); setTried(0)
+  }, [script])
+
+  const item = pool.length ? pool[idx % pool.length] : null
+  if (!item) return <p className="sub">Tidak ada huruf untuk latihan.</p>
 
   const next = (correct) => {
     if (correct) setScore((s) => s + 1)

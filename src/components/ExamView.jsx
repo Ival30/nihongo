@@ -64,7 +64,7 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
     setQIdx(0)
     setPicked(null)
     setAnswers([])
-    setTimeLeft(SECTIONS[0].duration * 60)
+    setTimeLeft(sectionQuizzes[0].duration * 60)
   }
 
   const currentSection = sectionQuizzes[section]
@@ -100,7 +100,7 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
       setSection(next)
       setQIdx(0)
       setPicked(null)
-      setTimeLeft(SECTIONS[next].duration * 60)
+      setTimeLeft(sectionQuizzes[next].duration * 60)
     }
   }
 

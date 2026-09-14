@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { speak, isSpeechSupported } from '../speak.js'
 
 // Latihan mendengarkan: putar suara (contoh kalimat/kata), tebak artinya.
@@ -12,6 +12,11 @@ export default function ListeningView({ levelId, vocab }) {
   const [revealed, setRevealed] = useState(false)
   const [correct, setCorrect] = useState(0)
   const [tried, setTried] = useState(0)
+
+  // Ganti tingkat → mulai dari awal
+  useEffect(() => {
+    setIdx(0); setRevealed(false); setCorrect(0); setTried(0)
+  }, [levelId])
 
   const item = items[idx % items.length]
 
@@ -66,7 +71,7 @@ export default function ListeningView({ levelId, vocab }) {
       </div>
 
       <div className="kana-progress">
-        <span className="sub">Benar {correct}/{tried} · {idx + 1}/{items.length}</span>
+        <span className="sub">Benar {correct}/{tried} · {(idx % items.length) + 1}/{items.length}</span>
       </div>
     </div>
   )
