@@ -186,7 +186,18 @@ export default function App() {
           </>
         )}
 
-        {view === 'progress' && <ProgressView progress={progress} srs={srs} />}
+        {view === 'progress' && (
+          <ProgressView
+            progress={progress}
+            srs={srs}
+            streak={streak}
+            onRestore={(d) => {
+              if (d.srs) setSrs(d.srs)
+              if (d.progress) setProgress(d.progress)
+              if (d.streak) setStreak(d.streak)
+            }}
+          />
+        )}
       </main>
     </div>
   )
