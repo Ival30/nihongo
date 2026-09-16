@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import FuriganaText from './FuriganaText.jsx'
 
 // Layar pengulangan terjadwal (SRS).
 // Alur: tampilkan kartu → buka jawaban → nilai ingatan (Ulangi/Sulit/Baik/Mudah).
@@ -124,7 +125,7 @@ function CardFace({ card, revealed }) {
           {meta.on && (
             <div className="flash-sub">On: {meta.on} · Kun: {meta.kun}</div>
           )}
-          {meta.example && <div className="example jp">{meta.example}</div>}
+          {meta.example && <div className="example jp">{meta.exampleFuri ? <FuriganaText text={meta.exampleFuri} /> : meta.example}</div>}
         </div>
       )}
     </div>

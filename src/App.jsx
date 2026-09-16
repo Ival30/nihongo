@@ -16,12 +16,16 @@ import ProgressView from './components/ProgressView.jsx'
 import SpeakButton from './components/SpeakButton.jsx'
 import KanaView from './components/KanaView.jsx'
 import Ruby from './components/Ruby.jsx'
+import FuriganaText from './components/FuriganaText.jsx'
 import ConjugationView from './components/ConjugationView.jsx'
 import ListeningView from './components/ListeningView.jsx'
 import ExamView from './components/ExamView.jsx'
 import DokkaiView from './components/DokkaiView.jsx'
 import GlobalSearchView from './components/GlobalSearchView.jsx'
 import StrokeOrder from './components/StrokeOrder.jsx'
+import AuthPanel from './components/AuthPanel.jsx'
+import { supabase, isCloudEnabled } from './supabase.js'
+import { loadCloud, saveCloud, shouldPullCloud } from './cloud.js'
 
 // Navigasi utama — ringkas, tanpa sublabel yang ramai.
 const NAV = [
@@ -65,6 +69,47 @@ export default function App() {
   const [levelData, setLevelData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [streak, setStreak] = useState(loadStreak)
+  const [user, setUser] = useState(null)
+  const [showAuth, setShowAuth] = useState(false)
+  const [syncMsg, setSyncMsg] = useState(null)
+
+  // Sesi Supabase: pulihkan + pantau login/logout
+  useEffect(() => {
+    if (!isCloudEnabled || !supabase) return
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user || null))
+    const { data: sub } = supabase.auth.onAuthStateChange((_ev, session) => {
+      setUser(session?.user || null)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  // Saat login: tarik cloud, timpa lokal bila cloud isi
+  useEffect(() => {
+    if (!user || !supabase) return
+    let alive = true
+    loadCloud(supabase, user.id)
+      .then((cloud) => {
+        if (!alive || !cloud) return
+        setSrs((s) => { const cur = { srs: s, progress }; return shouldPullCloud(cloud, cur) ? (cloud.srs || s) : s })
+        setProgress((p) => { const cur = { srs, progress: p }; return shouldPullCloud(cloud, cur) ? (cloud.progress || p) : p })
+        if (cloud.streak) setStreak(cloud.streak)
+        setSyncMsg('Progres cloud dimuat.')
+      })
+      .catch(() => setSyncMsg('Gagal muat cloud — pakai data lokal.'))
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
+  // Saat login + data berubah: dorong ke cloud (debounce 1.5 dtk)
+  useEffect(() => {
+    if (!user || !supabase) return
+    const t = setTimeout(() => {
+      saveCloud(supabase, user.id, { srs, progress, streak })
+        .then(() => setSyncMsg('Tersimpan di cloud.'))
+        .catch(() => setSyncMsg('Gagal simpan cloud — data lokal aman.'))
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [user, srs, progress, streak])
 
   useEffect(() => saveStreak(streak), [streak])
 
@@ -112,10 +157,17 @@ export default function App() {
         showLevel={showLevel}
         dueCount={getSRSStats(srs).due}
         streak={streak}
+        user={user}
         onBrand={() => handleNav('home')}
         onNav={handleNav}
         onLevel={handleLevel}
+        onAccount={() => setShowAuth((v) => !v)}
       />
+      {showAuth && (
+        <div style={{ maxWidth: 'var(--maxw)', margin: '0 auto', padding: '18px 30px 0', width: '100%' }}>
+          <AuthPanel user={user} sync={syncMsg} onClose={() => setShowAuth(false)} />
+        </div>
+      )}
       <main className="main">
         {view === 'home' && (
           <Home levelId={levelId} onLevel={setLevelId} progress={progress} srs={srs} onOpen={handleNav} />
@@ -144,7 +196,7 @@ export default function App() {
                 items={levelData.vocab}
                 progress={progress}
                 onMark={(key, ok) => { markActivity(); setProgress((p) => recordItemProgress(p, 'vocab', key, levelId, ok)) }}
-                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'vocab', batch, (it) => ({ content: it.jp, meta: { reading: it.reading, meaning: it.meaningId || it.meaning, example: it.example, exampleId: it.exampleId } })))}
+                onAddToSRS={(batch) => setSrs((s) => addCards(s, 'vocab', batch, (it) => ({ content: it.jp, meta: { reading: it.reading, meaning: it.meaningId || it.meaning, example: it.example, exampleFuri: it.exampleFuri, exampleId: it.exampleId } })))}
               />
             )}
             {view === 'grammar' && (
@@ -207,7 +259,7 @@ function Loading() {
   return <p className="sub" style={{ padding: '40px 0', textAlign: 'center' }}>Memuat materi…</p>
 }
 
-function TopBar({ view, levelId, showLevel, dueCount, streak, onBrand, onNav, onLevel }) {
+function TopBar({ view, levelId, showLevel, dueCount, streak, user, onBrand, onNav, onLevel, onAccount }) {
   return (
     <header className="topbar">
       <div className="brand" onClick={onBrand}>
@@ -431,7 +483,7 @@ function VocabView({ level, levelId, items, progress, onMark, onAddToSRS }) {
               {item.example && (
                 <div className="example">
                   <span className="ex-jp-row">
-                    <span className="jp">{item.example}</span>
+                    <span className="jp">{item.exampleFuri ? <FuriganaText text={item.exampleFuri} /> : item.example}</span>
                     <SpeakButton text={item.example} label={item.example} />
                   </span>
                   {item.exampleRomaji && <span className="rm">{item.exampleRomaji}</span>}

@@ -5,17 +5,18 @@ const cache = {}
 
 export async function loadLevelData(levelId) {
   if (cache[levelId]) return cache[levelId]
-  const [vocab, grammar, kanji, idGloss, grammarId, examples, kanjiId] = await Promise.all([
+  const [vocab, grammar, kanji, idGloss, grammarId, examples, exampleFuri, kanjiId] = await Promise.all([
     import(`./vocab/${levelId}.js`),
     import(`./grammar/${levelId}.js`),
     import(`./kanji/${levelId}.js`),
     loadIdGloss(levelId),
     loadGrammarId(levelId),
     loadExamples(levelId),
+    loadExampleFuri(levelId),
     loadKanjiId(levelId),
   ])
   const vocabMerged = mergeId(vocab.default, idGloss)
-  const vocabWithExamples = mergeExamples(vocabMerged, examples)
+  const vocabWithExamples = mergeExamples(vocabMerged, examples, exampleFuri)
   const grammarMerged = grammarId || grammar.default
   const kanjiMerged = mergeKanjiId(kanji.default, kanjiId)
   cache[levelId] = { vocab: vocabWithExamples, grammar: grammarMerged, kanji: kanjiMerged }
@@ -70,11 +71,27 @@ function mergeId(vocab, idGloss) {
   return vocab.map((it) => ({ ...it, meaningId: idGloss[it.jp] || null }))
 }
 
+async function loadExampleFuri(levelId) {
+  try {
+    const m = await import(`./vocab/${levelId}.examples-furi.js`)
+    return m.default
+  } catch {
+    return null
+  }
+}
+
 // Gabungkan contoh kalimat ke kosakata.
-function mergeExamples(vocab, examples) {
+function mergeExamples(vocab, examples, exampleFuri) {
   if (!examples) return vocab
   return vocab.map((it) => {
     const ex = examples[it.jp]
-    return ex ? { ...it, example: ex.example, exampleId: ex.exampleId, exampleRomaji: ex.romaji } : it
+    if (!ex) return it
+    return {
+      ...it,
+      example: ex.example,
+      exampleId: ex.exampleId,
+      exampleRomaji: ex.romaji,
+      exampleFuri: (exampleFuri && exampleFuri[it.jp]) || null,
+    }
   })
 }

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { buildQuiz, buildListeningQuiz } from '../data/quiz.js'
 import { speak } from '../speak.js'
+import FuriganaText from './FuriganaText.jsx'
 
 // Mode Ujian JLPT: simulasi ujian sungguhan dengan timer, beberapa seksi,
 // dan laporan skor akhir. Format disederhanakan tapi menyerupai JLPT asli.
@@ -188,7 +189,7 @@ export default function ExamView({ level, levelData, levelId, onFinish }) {
             </svg>
           </button>
           <div className="listen-hint">Putar ulang dan pilih artinya</div>
-          {picked && <div className="listen-placeholder jp">{question.audio}</div>}
+          {picked && <div className="listen-placeholder jp">{question.exampleFuri ? <FuriganaText text={question.exampleFuri} /> : question.audio}</div>}
         </div>
       ) : (
         <>

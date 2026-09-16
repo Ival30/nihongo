@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { speak, isSpeechSupported } from '../speak.js'
+import FuriganaText from './FuriganaText.jsx'
 
 // Latihan mendengarkan: putar suara (contoh kalimat/kata), tebak artinya.
 // Sumber: kosakata level aktif yang PUNYA contoh kalimat.
@@ -50,7 +51,7 @@ export default function ListeningView({ levelId, vocab }) {
         <div className="listen-hint">Dengarkan, lalu tebak artinya.</div>
         {revealed ? (
           <div className="listen-reveal">
-            <div className="listen-jp jp">{item.example}</div>
+            <div className="listen-jp jp">{item.exampleFuri ? <FuriganaText text={item.exampleFuri} /> : item.example}</div>
             {item.exampleRomaji && <div className="rm">{item.exampleRomaji}</div>}
             <div className="listen-id">{item.exampleId}</div>
           </div>

@@ -96,6 +96,7 @@ export function buildListeningQuiz(levelId, vocabList, count = 10) {
       answer,
       options,
       hint: undefined,
+      exampleFuri: item.exampleFuri || null,
     }
   })
 }
