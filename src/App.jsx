@@ -279,6 +279,9 @@ function TopBar({ view, levelId, showLevel, dueCount, streak, user, onBrand, onN
       </nav>
 
       <div className="topbar-right">
+        <button className="btn ghost" style={{ padding: '6px 12px' }} onClick={onAccount} title={user ? user.email : 'Masuk / Daftar'}>
+          {user ? user.email.split('@')[0] : 'Masuk'}
+        </button>
         {streak?.current > 0 && (
           <span className="streak-chip" title={`Rentetan belajar: ${streak.current} hari (terbaik ${streak.best})`}>
             {streak.current}
