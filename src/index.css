@@ -1056,7 +1056,50 @@ rt {
   .kanji-char { font-size: 2.2rem; }
 }
 
+/* ---------- Kainara toast ---------- */
+.kainara-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(33, 28, 22, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s ease;
+  padding: 20px;
+}
+.kainara-overlay.leaving {
+  animation: fadeOut 0.25s ease forwards;
+}
+.kainara-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  max-width: 400px;
+  width: 100%;
+  padding: 28px 24px 20px;
+  text-align: center;
+}
+.kainara-greeting {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.kainara-body {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+
 @media (max-width: 480px) {
   .nav-link { padding: 5px 10px; font-size: 0.85rem; }
   .level-pill { padding: 3px 8px; font-size: 0.76rem; }
+  .kainara-card { padding: 22px 18px 16px; }
 }

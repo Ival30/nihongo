@@ -72,6 +72,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [showAuth, setShowAuth] = useState(false)
   const [syncMsg, setSyncMsg] = useState(null)
+  const [kainaraPrompt, setKainaraPrompt] = useState(null) // toast Kainara
 
   // Sesi Supabase: pulihkan + pantau login/logout
   useEffect(() => {
@@ -115,6 +116,18 @@ export default function App() {
 
   // Catat aktivitas belajar → memperbarui streak harian
   const markActivity = () => setStreak((s) => recordActivity(s))
+
+  // Kainara: asisten belajar — muncul setelah user mulai belajar, arahkan ke login
+  const KAINARA_SHOWN_KEY = 'nihongo_kainara_shown'
+  const triggerKainara = () => {
+    if (user) return // sudah login, tidak perlu prompt
+    if (localStorage.getItem(KAINARA_SHOWN_KEY)) return // sudah pernah ditampilkan
+    const totalLearned = Object.values(progress?.items || {}).reduce((n, type) => n + Object.values(type).filter((v) => v.learned).length, 0)
+    if (totalLearned < 3) return // belum cukup belajar
+    localStorage.setItem(KAINARA_SHOWN_KEY, '1')
+    setKainaraPrompt('learned')
+  }
+  useEffect(() => { triggerKainara() }, [progress, user])
 
   const level = getLevel(levelId)
   const showLevel = !['home', 'progress', 'kana', 'cari'].includes(view)
@@ -167,6 +180,13 @@ export default function App() {
         <div style={{ maxWidth: 'var(--maxw)', margin: '0 auto', padding: '18px 30px 0', width: '100%' }}>
           <AuthPanel user={user} sync={syncMsg} onClose={() => setShowAuth(false)} />
         </div>
+      )}
+      {kainaraPrompt && (
+        <KainaraToast
+          reason={kainaraPrompt}
+          onLogin={() => { setKainaraPrompt(null); setShowAuth(true) }}
+          onDismiss={() => setKainaraPrompt(null)}
+        />
       )}
       <main className="main">
         {view === 'home' && (
@@ -812,6 +832,33 @@ function PageHeader({ level, title, desc }) {
     <div className="page-header">
       <h1>{title}</h1>
       <p>{desc}</p>
+    </div>
+  )
+}
+
+// Kainara — asisten belajar yang muncul saat user mulai aktif
+const KAINARA_MESSAGES = {
+  learned: {
+    greeting: 'Hai, aku Kainara! 🎌',
+    body: 'Kamu sudah mulai belajar — hebat! Supaya progresmu tidak hilang kalau ganti perangkat, yuk simpan di akun.',
+    cta: 'Simpan Progres',
+  },
+}
+
+function KainaraToast({ reason, onLogin, onDismiss }) {
+  const msg = KAINARA_MESSAGES[reason] || KAINARA_MESSAGES.learned
+  const [leaving, setLeaving] = useState(false)
+  const dismiss = () => { setLeaving(true); setTimeout(onDismiss, 300) }
+  return (
+    <div className={`kainara-overlay ${leaving ? 'leaving' : ''}`} onClick={dismiss}>
+      <div className="kainara-card" onClick={(e) => e.stopPropagation()}>
+        <div className="kainara-greeting">{msg.greeting}</div>
+        <p className="kainara-body">{msg.body}</p>
+        <div className="btn-row" style={{ justifyContent: 'flex-start', marginTop: 14 }}>
+          <button className="btn" onClick={onLogin}>{msg.cta}</button>
+          <button className="btn ghost" onClick={dismiss}>Nanti saja</button>
+        </div>
+      </div>
     </div>
   )
 }
