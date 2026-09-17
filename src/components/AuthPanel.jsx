@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { supabase, isCloudEnabled } from '../supabase.js'
 
-// Panel akun ringkas: daftar/masuk email+password Supabase Auth, keluar.
-// Tanpa cloud (env belum diisi) → tampil instruksi setup, bukan error.
+// Panel akun: daftar/masuk email+password, keluar.
+// Tanpa cloud → tampil instruksi setup.
 export default function AuthPanel({ user, sync, onClose }) {
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -23,10 +23,10 @@ export default function AuthPanel({ user, sync, onClose }) {
   if (user) {
     return (
       <div className="auth-panel">
-        <div className="auth-title">Masuk sebagai</div>
+        <div className="auth-title">Akun</div>
         <div className="auth-email">{user.email}</div>
-        <p className="sub" style={{ margin: '6px 0 12px' }}>{sync || 'Progres tersambung ke cloud.'}</p>
-        <div className="btn-row" style={{ justifyContent: 'flex-start', marginTop: 0 }}>
+        <p className="sub" style={{ margin: '6px 0 0' }}>{sync || 'Progres tersambung ke cloud.'}</p>
+        <div className="btn-row" style={{ justifyContent: 'flex-start', marginTop: 16 }}>
           <button className="btn ghost" onClick={async () => { await supabase.auth.signOut() }}>Keluar</button>
           <button className="btn ghost" onClick={onClose}>Tutup</button>
         </div>
@@ -61,18 +61,33 @@ export default function AuthPanel({ user, sync, onClose }) {
   return (
     <div className="auth-panel">
       <div className="auth-title">{mode === 'daftar' ? 'Buat akun' : 'Masuk'}</div>
-      <p className="sub" style={{ margin: '4px 0 12px' }}>Progres tersimpan di cloud, lanjut di HP/laptop mana pun.</p>
+      <p className="auth-sub">Progres tersimpan di cloud — lanjut di perangkat mana pun.</p>
       <form onSubmit={submit} className="auth-form">
-        <input className="search" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-        <input className="search" type="password" placeholder="Kata sandi (min. 6)" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete={mode === 'daftar' ? 'new-password' : 'current-password'} />
-        {msg && <p className={`feedback ${msg.ok ? 'good' : 'bad'}`} style={{ marginTop: 0 }}>{msg.text}</p>}
-        <div className="btn-row" style={{ justifyContent: 'flex-start', marginTop: 12 }}>
-          <button className="btn" type="submit" disabled={busy}>{busy ? 'Tunggu…' : mode === 'daftar' ? 'Daftar' : 'Masuk'}</button>
-          <button className="btn ghost" type="button" onClick={() => { setMode(mode === 'daftar' ? 'login' : 'daftar'); setMsg(null) }}>
-            {mode === 'daftar' ? 'Sudah punya akun' : 'Buat akun'}
-          </button>
-        </div>
+        <input
+          className="auth-input"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          autoFocus
+        />
+        <input
+          className="auth-input"
+          type="password"
+          placeholder="Kata sandi (min. 6)"
+          value={pass}
+          onChange={(e) => setPass(e.target.value)}
+          autoComplete={mode === 'daftar' ? 'new-password' : 'current-password'}
+        />
+        {msg && <p className={`auth-msg ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</p>}
+        <button className="btn auth-submit" type="submit" disabled={busy}>
+          {busy ? 'Tunggu…' : mode === 'daftar' ? 'Daftar' : 'Masuk'}
+        </button>
       </form>
+      <button className="auth-switch" type="button" onClick={() => { setMode(mode === 'daftar' ? 'login' : 'daftar'); setMsg(null) }}>
+        {mode === 'daftar' ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
+      </button>
     </div>
   )
 }
