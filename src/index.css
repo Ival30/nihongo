@@ -763,15 +763,34 @@ rt {
 .search::placeholder { color: var(--faint); }
 
 /* ---------- Auth panel ---------- */
+/* ---------- Auth overlay (full-screen modal) ---------- */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(33, 28, 22, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.18s ease;
+}
+.dark .auth-overlay {
+  background: rgba(10, 8, 6, 0.65);
+}
+
 .auth-panel {
   max-width: 380px;
+  width: 100%;
   margin: 0 auto;
-  padding: 28px 24px 20px;
+  padding: 32px 28px 24px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   text-align: center;
+  animation: slideUp 0.22s ease;
 }
 .auth-title {
   font-family: var(--serif);
@@ -1233,6 +1252,7 @@ rt {
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
 
 @media (max-width: 480px) {
   .nav-link { padding: 5px 10px; font-size: 0.85rem; }

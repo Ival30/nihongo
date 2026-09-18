@@ -179,7 +179,7 @@ export default function App() {
         onAccount={() => setShowAuth((v) => !v)}
       />
       {showAuth && (
-        <div style={{ maxWidth: 'var(--maxw)', margin: '0 auto', padding: '18px 30px 0', width: '100%' }}>
+        <div className="auth-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowAuth(false) }}>
           <AuthPanel user={user} sync={syncMsg} onClose={() => setShowAuth(false)} />
         </div>
       )}
