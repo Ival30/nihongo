@@ -21,6 +21,8 @@ import ConjugationView from './components/ConjugationView.jsx'
 import ListeningView from './components/ListeningView.jsx'
 import ExamView from './components/ExamView.jsx'
 import DokkaiView from './components/DokkaiView.jsx'
+import VocabDrillView from './components/VocabDrillView.jsx'
+import GrammarDrillView from './components/GrammarDrillView.jsx'
 import GlobalSearchView from './components/GlobalSearchView.jsx'
 import StrokeOrder from './components/StrokeOrder.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
@@ -279,7 +281,23 @@ function Loading() {
   return <p className="sub" style={{ padding: '40px 0', textAlign: 'center' }}>Memuat materi…</p>
 }
 
+function useTheme() {
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem('nihongo_theme')
+    if (stored) return stored === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('nihongo_theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  return [dark, setDark]
+}
+
 function TopBar({ view, levelId, showLevel, dueCount, streak, user, onBrand, onNav, onLevel, onAccount }) {
+  const [dark, setDark] = useTheme()
   return (
     <header className="topbar">
       <div className="brand" onClick={onBrand}>
@@ -299,6 +317,13 @@ function TopBar({ view, levelId, showLevel, dueCount, streak, user, onBrand, onN
       </nav>
 
       <div className="topbar-right">
+        <button className="theme-toggle" onClick={() => setDark(d => !d)} title={dark ? 'Light mode' : 'Dark mode'}>
+          {dark ? (
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></g></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          )}
+        </button>
         <button className="btn ghost" style={{ padding: '6px 12px' }} onClick={onAccount} title={user ? user.email : 'Masuk / Daftar'}>
           {user ? user.email.split('@')[0] : 'Masuk'}
         </button>
@@ -679,6 +704,8 @@ function PracticeView({ level, levelData, levelId, srs, onReview, onFinish }) {
         <div className={`tab ${sub === 'conj' ? 'active' : ''}`} onClick={() => setSub('conj')}>Konjugasi</div>
         <div className={`tab ${sub === 'listen' ? 'active' : ''}`} onClick={() => setSub('listen')}>Dengar</div>
         <div className={`tab ${sub === 'quiz' ? 'active' : ''}`} onClick={() => setSub('quiz')}>Kuis</div>
+        <div className={`tab ${sub === 'drill' ? 'active' : ''}`} onClick={() => setSub('drill')}>Latih Kata</div>
+        <div className={`tab ${sub === 'grammar-drill' ? 'active' : ''}`} onClick={() => setSub('grammar-drill')}>Latih Tata Bahasa</div>
       </div>
 
       {sub === 'flashcard' && (
@@ -695,6 +722,12 @@ function PracticeView({ level, levelData, levelId, srs, onReview, onFinish }) {
       )}
       {sub === 'quiz' && (
         <QuizView level={level} data={levelData} levelId={levelId} onFinish={onFinish} />
+      )}
+      {sub === 'drill' && (
+        <VocabDrillView levelId={levelId} vocab={levelData.vocab} />
+      )}
+      {sub === 'grammar-drill' && (
+        <GrammarDrillView levelId={levelId} grammar={levelData.grammar} />
       )}
     </div>
   )

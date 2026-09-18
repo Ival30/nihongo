@@ -29,6 +29,26 @@
   --maxw: 1160px;
 }
 
+/* Dark theme overrides */
+.dark {
+  --bg: #1a1814;
+  --surface: #252220;
+  --surface-2: #2e2a26;
+  --ink: #e8e0d4;
+  --ink-soft: #c4baa8;
+  --muted: #9a9080;
+  --faint: #6a6050;
+  --border: #3a3530;
+  --border-strong: #4a4540;
+  --accent: #e05545;
+  --accent-deep: #cf4438;
+  --accent-wash: #3a2520;
+  --good: #5aad6e;
+  --bad: #e05545;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -62,6 +82,37 @@ button { font-family: var(--sans); }
   background: rgba(246, 242, 234, 0.94);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
+}
+
+.dark .topbar {
+  background: rgba(26, 24, 20, 0.94);
+  backdrop-filter: blur(12px);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  background: var(--accent-wash);
+}
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
 }
 
 .brand {
@@ -610,6 +661,8 @@ rt {
   line-height: 1.6;
 }
 .dokkai-explain.good { background: #eef5ef; color: #2c5e3c; }
+.dark .dokkai-explain.good { background: #1e3a24; color: #7dd896; }
+.dark .dokkai-explain.bad { background: var(--accent-wash); color: var(--accent-deep); }
 .dokkai-explain.bad { background: var(--accent-wash); color: var(--accent-deep); }
 
 .dokkai-score { font-weight: 700; color: var(--accent); align-self: center; margin-right: 8px; }
@@ -850,6 +903,7 @@ rt {
 }
 
 .flash-back { transform: rotateY(180deg); background: var(--accent-wash); border-color: #e8cfc6; }
+.dark .flash-back { border-color: #4a3530; }
 
 .flash-label {
   font-size: 0.68rem;
@@ -942,6 +996,7 @@ rt {
 }
 .option:hover:not(:disabled) { border-color: var(--accent); background: var(--surface-2); }
 .option.correct { background: #eef5ef; border-color: var(--good); color: #2c5e3c; }
+.dark .option.correct { background: #1e3a24; color: #7dd896; }
 .option.wrong { background: var(--accent-wash); border-color: var(--bad); color: var(--accent-deep); }
 .option:disabled { cursor: default; }
 
